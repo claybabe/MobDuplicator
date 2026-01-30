@@ -27,7 +27,8 @@ local function onModConfigReady()
   page.sidebar:createInfo({text = "The Outcome chosen will have that many additional spawns created.\nMore tickets increase chance to be chosen.\n\n\n\n"})
 
   page.sidebar:createCategory("Shoutout")
-  page.sidebar:createInfo({text = "nullcascade\nmerlord\ntwitch.tv/mojorising\ntwitch.tv/literallygambling"})
+  page.sidebar:createInfo({text = "NullCascade\nMerlord\ntwitch.tv/MojoRising\ntwitch.tv/LiterallyGambling"})
+  page.sidebar:createInfo({text = "www.keithschwarz.com/darts-dice-coins/"})
 
   local function update()
     event.trigger("MobDuplicator:Rebuild")
