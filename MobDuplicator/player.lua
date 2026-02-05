@@ -12,146 +12,165 @@ local distribution = storage.playerSection("MobDuplicator_Distribution")
 local playerSettings = storage.playerSection('Settings_MobDuplicator')
 local hotkey = storage.playerSection('Settings_Hotkey_MobDuplicator')
 
+local defaultOutcomes = {
+  {outcome = 0, tickets = 15 }, 
+  {outcome = 1, tickets = 40 }, 
+  {outcome = 2, tickets = 30 },
+  {outcome = 5, tickets = 14 },
+  {outcome = 9, tickets = 1 },
+  {outcome = 99, tickets = 0.01 },
+}
+
 local windowElement = nil
-local currentEditString = ""
-
-local NUM = 0
-
-local function parseDistString()
-  local dist = {}
-  local raw = distribution:get('distString') or "0,15 ; 1,40 ; 2,30 ; 5,14 ; 9,1 ; 99,0.01"
-  
-  print("[MobDuplicator] Parsing: " .. raw)
-  local newString = ""
-  for pair in raw:gmatch("([^;]+)") do
-    local outcome, tickets = pair:match("([^,]+),([^,]+)")
-    outcome, tickets = tonumber(outcome), tonumber(tickets)
-    if outcome and tickets then
-      table.insert(dist, {outcome = outcome, tickets = tickets})
-      newString = newString .. string.format("%s, %s ; ", outcome, tickets)
-    end
-  end
-
-  print(string.format("[MobDuplicator] Parsing finished. [[%s]]", newString))
-  
-  if #dist > 0 then
-    distribution:set("distString", newString)
-    for _, entry in pairs(dist) do
-      print("outcome: " .. entry.outcome .. "  tickets: " .. entry.tickets)
-    end
-    distribution:set('dist', dist)
-    core.sendGlobalEvent("rebuildDDS", dist)
-  else
-    distribution:set("distString", "0,1 ;")
-    print("[MobDuplicator] Empty distribution! sending {{outcome = 0, tickets = 1}}")
-    core.sendGlobalEvent("rebuildDDS", {{outcome = 0, tickets = 1}})
-  end
-end
 
 local toggleDistEdit
-local function CONTENT()
-  local temp = {}
-  local ele = {
-                type = ui.TYPE.Text,
-                props = {
-                  text = "MobDuplicator",
-                  textSize = 24,
-                  textColor = util.color.rgb(202/255, 165/255, 96/255),
-                }
-              }
-  for i = 1, NUM do
-    table.insert(temp, ele)
+local createConfigWindow
+
+local function deepCopy(t)
+  if type(t) ~= 'table' and type(t) ~= 'userdata' then return t end
+  local res = {}
+  for k, v in pairs(t) do
+    res[k] = deepCopy(v)
   end
+  return res
+end
+
+-- STATE
+local workingData
+
+-- UI COMPONENTS
+local function ROW(index, entry)
   return {
-    {
-      type = ui.TYPE.Text,
-      props = { text = " [ SAVE & APPLY ] ", textSize = 18 },
-      events = {
-        mouseClick = async:callback(function()
-          distribution:set('distString', currentEditString)
-          parseDistString()
-          print("[MobDuplicator] Settings Saved via UI.")
-          toggleDistEdit()
-        end)
-      }
+    type = ui.TYPE.Flex,
+    props = { 
+      horizontal = true, -- The correct property from the docs!
     },
-    table.unpack(temp)    
+    content = ui.content({
+      -- Outcome Box
+      {
+        type = ui.TYPE.Image,
+        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.2, 0.5, 0.1), size = util.vector2(80, 30) },
+        content = ui.content({{
+          type = ui.TYPE.TextEdit,
+          props = { text = tostring(entry.outcome), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1)},
+          events = { textChanged = async:callback(function(t) workingData[index].outcome = tonumber(t) or 0 end) }
+        }})
+      },
+      { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
+      -- Tickets Box
+      {
+        type = ui.TYPE.Image,
+        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.2, 0.1, 0.3), size = util.vector2(80, 30) },
+        content = ui.content({{
+          type = ui.TYPE.TextEdit,
+          props = { text = tostring(entry.tickets), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1)},
+          events = { textChanged = async:callback(function(t) workingData[index].tickets = tonumber(t) or 0 end) }
+        }})
+      },
+      { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
+      -- Remove Button
+      {
+        type = ui.TYPE.Image,
+        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.5, 0.1, 0.1), size = util.vector2(30, 30) },
+        events = { mouseClick = async:callback(function() 
+          table.remove(workingData, index)
+          if #workingData == 0 then
+            table.insert(workingData, {outcome = 0, tickets = 1})
+          end
+          createConfigWindow() 
+        end) },
+        content = ui.content({{ 
+          type = ui.TYPE.Text, 
+          props = { text = "X", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(0, 0, 0)} 
+        }})
+      },
+    })
   }
 end
 
-local function createConfigWindow()
-  if NUM < 10 then NUM = NUM + 1 end
+createConfigWindow = function()
   if windowElement then windowElement:destroy() end
 
-  -- Pre-fill with current settings
-  currentEditString = distribution:get('distString')
+  local rowsContent = {}
+  
+  -- Header labels for the table
+  table.insert(rowsContent, {
+    type = ui.TYPE.Flex,
+    props = { horizontal = true },
+    content = ui.content({
+      { type = ui.TYPE.Text, props = { text = "Outcome", textSize = 14, size = util.vector2(80, 20) } },
+      { type = ui.TYPE.Widget, props = { size = util.vector2(45, 0) } },
+      { type = ui.TYPE.Text, props = { text = "Tickets", textSize = 14, size = util.vector2(80, 20) } },
+      { type = ui.TYPE.Widget, props = { size = util.vector2(45, 0) } },
+    })
+  })
+
+  for i, entry in ipairs(workingData) do
+    table.insert(rowsContent, ROW(i, entry))
+    table.insert(rowsContent, { type = ui.TYPE.Widget, props = { size = util.vector2(0, 10) } }) 
+  end
 
   windowElement = ui.create({
     layer = 'Windows',
     type = ui.TYPE.Container,
-    props = {
-      relativePosition = util.vector2(0.5, 0.5),
-      anchor = util.vector2(0.5, 0.5),
-      size = util.vector2(888, 350),
-    },
+    props = { relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), size = util.vector2(500, 600) },
     content = ui.content({
-      -- Background 
       {
         type = ui.TYPE.Image,
-        props = {
-          resource = ui.texture({path = 'white'}),
-          color = util.color.rgb(0.3, 0.3, 0.3),
-          size = util.vector2(888, 350),
-        },
+        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.2, 0.2, 0.2), size = util.vector2(500, 600) },
         content = ui.content({
-          -- Vertical Layout Container
           {
             type = ui.TYPE.Flex,
-            props = {
-              horizontalAlignment = ui.ALIGNMENT.Center,
-              column = true,
-              size = util.vector2(800, 300),
-              relativePosition = util.vector2(0.5, 0.5),
-              anchor = util.vector2(0.5, 0.5),
+            props = { 
+              horizontal = false,
+              size = util.vector2(500, 600) 
             },
             content = ui.content({
-              -- Title
-              {
-                type = ui.TYPE.Text,
-                props = {
-                  text = "MobDuplicator",
-                  textSize = 24,
-                  textColor = util.color.rgb(202/255, 165/255, 96/255),
-                }
-              },
-              -- Spacer
-              { type = ui.TYPE.Container, props = { size = util.vector2(0, 200) } },
-              -- Label
-
-              -- THE TEXT INPUT
-              {
-                type = ui.TYPE.TextEdit,
-                props = {
-                  text = currentEditString,
-                  textSize = 42,
-                  size = util.vector2(800, 48),
-                  textColor = util.color.rgb(1,1,1),
-                },
-                events = {
-                  textChanged = async:callback(function(newText)
-                    currentEditString = newText
-                  end)
-                }
-              },
-              -- Spacer
-              { type = ui.TYPE.Container, props = { size = util.vector2(0, 40) } },
-              -- BUTTONS ROW
+              -- Top Buttons
               {
                 type = ui.TYPE.Flex,
-                --props = { column = false },
+                props = { horizontal = true, verticalAlignment = ui.ALIGNMENT.Center },
                 content = ui.content({
-                  table.unpack(CONTENT())
+                  {
+                    type = ui.TYPE.Text, props = { text = "[ DEFAULT ]", textSize = 20 },
+                    events = { mouseClick = async:callback(function() 
+                      workingData = deepCopy(defaultOutcomes)
+                      createConfigWindow() 
+                    end) }
+                  },
+                  {
+                    type = ui.TYPE.Text, props = { text = "[ REVERT ]", textSize = 20 },
+                    events = { mouseClick = async:callback(function() 
+                      workingData = deepCopy(distribution:get("dist"))
+                      createConfigWindow() 
+                    end) }
+                  },                  
+                  { type = ui.TYPE.Widget, props = { size = util.vector2(50, 40) } },
+                  {
+                    type = ui.TYPE.Text, props = { text = "[ SAVE ]", textSize = 20, textColor = util.color.rgb(0.5, 1, 0.5) },
+                    events = { mouseClick = async:callback(function() 
+                      distribution:set('dist', workingData)
+                      core.sendGlobalEvent("rebuildDDS", workingData)
+                      I.UI.setMode()
+                    end) }
+                  }
                 })
+              },
+              { type = ui.TYPE.Widget, props = { size = util.vector2(0, 20) } },
+              -- The List
+              { 
+                type = ui.TYPE.Flex, 
+                props = { horizontal = false }, 
+                content = ui.content(rowsContent) 
+              },
+              { type = ui.TYPE.Widget, props = { size = util.vector2(0, 20) } },
+              -- Add Button
+              {
+                type = ui.TYPE.Text, props = { text = "(+) ADD NEW ROW", textSize = 18, textColor = util.color.rgb(0.8, 0.8, 1) },
+                events = { mouseClick = async:callback(function() 
+                  table.insert(workingData, {outcome = 0, tickets = 1}) 
+                  createConfigWindow() 
+                end) }
               }
             })
           }
@@ -160,6 +179,7 @@ local function createConfigWindow()
     })
   })
 end
+
 toggleDistEdit = function()
   I.UI.setMode('Interface', { windows = {} })
 
@@ -168,6 +188,7 @@ toggleDistEdit = function()
     windowElement = nil
     I.UI.setMode()
   else
+      workingData = deepCopy(distribution:get("dist"))
       createConfigWindow()
   end
 end
@@ -186,9 +207,6 @@ local function onRequestCooldown()
   print("SENDING COOLDOWN")
   core.sendGlobalEvent("updateCooldown", playerSettings:get("cooldown"))
 end
-
-
-parseDistString()
 
 input.registerTrigger {
     key = 'OpenDistEdit',
@@ -247,18 +265,25 @@ I.Settings.registerGroup({
   },
 })
 
+--Init
+workingData = distribution:get("dist")
+if workingData == nil then
+  workingData = deepCopy(defaultOutcomes)
+  distribution:set("dist", workingData)
+else
+  workingData = deepCopy(workingData)
+end
+core.sendGlobalEvent("rebuildDDS", workingData)
+
 return {
-    
-    eventHandlers = {
-        -- This catch-all ensures that if the user forces the menu closed, 
-        -- we clean up our variables.
-        UiModeChanged = function(data)
-            if data.newMode == nil and windowElement then
-                windowElement:destroy()
-                windowElement = nil
-            end
-        end,
-        requestCooldown = onRequestCooldown,
-    }
+  eventHandlers = {
+    UiModeChanged = function(data)
+      if data.newMode == nil and windowElement then
+        windowElement:destroy()
+        windowElement = nil
+      end
+    end,
+    requestCooldown = onRequestCooldown,
+  }
 }
 --end player.lua
