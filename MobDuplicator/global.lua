@@ -6,13 +6,13 @@ local util = require('openmw.util')
 local async = require('openmw.async')
 local storage = require('openmw.storage')
 
-local DDS = require('DDS')
+local FancyDice = require('DDS')
 
 -- initializing sampler to always zero incase there is a delay upon loading
-local mobSampler = DDS:new({{outcome = 0, tickets = 1}}) 
+local fancyDice = FancyDice:new({{outcome = 0, tickets = 1}}) 
 
 local spawnerCooldown = {}
-local globalSettings = storage.globalSection("MobDuplicator_Global")
+local cooldown = 0
 
 local function onObjectActive(obj)
     
@@ -23,12 +23,12 @@ local function onObjectActive(obj)
     print(string.format("%s COOLDOWN [%s]", spawnerCooldown[obj.id] - currentTime, obj.recordId))
     return false
   end
-  spawnerCooldown[obj.id] = currentTime + (globalSettings:get("cooldown") or 0)
+  spawnerCooldown[obj.id] = currentTime + cooldown
 
   local playerLvl = types.Actor.stats.level(world.players[1]).current
   local record = types.LevelledCreature.record(obj.recordId)
   
-  local roll = mobSampler:roll()
+  local roll = fancyDice:roll()
   print(string.format("ROLL: %s [%s]", roll, obj.recordId))
   for i = 1, roll do
 
@@ -60,8 +60,8 @@ end
 local function onSave()
   local currentTime = core.getSimulationTime()
   local cleaned = 0
-  for id, cooldown in pairs(spawnerCooldown) do
-    if cooldown < currentTime then
+  for id, timestamp in pairs(spawnerCooldown) do
+    if timestamp < currentTime then
       spawnerCooldown[id] = nil
       cleaned = cleaned + 1
     end
@@ -74,14 +74,6 @@ local function onSave()
 end
 
 local function onLoad(data)
-  print("LOADING")
-  local cd = globalSettings:get("cooldown")
-  if cd == nil then
-    print("REQUESTING COOLDOWN")
-    print(globalSettings:get("cooldown"))
-    world.players[1]:sendEvent("requestCooldown")
-
-  end
   if data and data.spawnerCooldown then
     spawnerCooldown = data.spawnerCooldown
   else
@@ -89,23 +81,24 @@ local function onLoad(data)
   end
 end
 
-local function updateCooldown(cooldown)
-  globalSettings:set("cooldown", cooldown)
-  print(string.format("updated cooldown: %s", cooldown))
-end
-
-local function rebuildDDS(dist)
-  print("rebuildingDDS")
-  for k, v in pairs(dist) do
-    print(string.format("outcome : %s  tickets : %s", v.outcome, v.tickets))
+local function updateMDsettings(data)
+  print("UPDATE MD SETTINGS TRIGGERED:")
+  if data.dist then 
+    print("REBUILDING FANCY DICE:")
+    for k, v in pairs(data.dist) do
+      print(string.format("outcome : %s  tickets : %s", v.outcome, v.tickets))
+    end
+    fancyDice = FancyDice:new(data.dist)
   end
-  mobSampler = DDS:new(dist)
+  if data.cooldown then
+    print(string.format("COOLDOWN: %s", data.cooldown))
+    cooldown = data.cooldown
+  end
 end
 
 return {
   eventHandlers = {
-    updateCooldown = updateCooldown,
-    rebuildDDS = rebuildDDS,
+    updateMDsettings = updateMDsettings,
   },
   engineHandlers = {
     onObjectActive = onObjectActive,

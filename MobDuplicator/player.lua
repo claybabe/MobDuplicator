@@ -23,7 +23,6 @@ local defaultOutcomes = {
 
 local windowElement = nil
 
-local toggleDistEdit
 local createConfigWindow
 
 local function deepCopy(t)
@@ -37,56 +36,6 @@ end
 
 -- STATE
 local workingData
-
--- UI COMPONENTS
-local function ROW(index, entry)
-  return {
-    type = ui.TYPE.Flex,
-    props = { 
-      horizontal = true, -- The correct property from the docs!
-    },
-    content = ui.content({
-      -- Outcome Box
-      {
-        type = ui.TYPE.Image,
-        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.2, 0.5, 0.1), size = util.vector2(80, 30) },
-        content = ui.content({{
-          type = ui.TYPE.TextEdit,
-          props = { text = tostring(entry.outcome), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1)},
-          events = { textChanged = async:callback(function(t) workingData[index].outcome = tonumber(t) or 0 end) }
-        }})
-      },
-      { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
-      -- Tickets Box
-      {
-        type = ui.TYPE.Image,
-        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.2, 0.1, 0.3), size = util.vector2(80, 30) },
-        content = ui.content({{
-          type = ui.TYPE.TextEdit,
-          props = { text = tostring(entry.tickets), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1)},
-          events = { textChanged = async:callback(function(t) workingData[index].tickets = tonumber(t) or 0 end) }
-        }})
-      },
-      { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
-      -- Remove Button
-      {
-        type = ui.TYPE.Image,
-        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.5, 0.1, 0.1), size = util.vector2(30, 30) },
-        events = { mouseClick = async:callback(function() 
-          table.remove(workingData, index)
-          if #workingData == 0 then
-            table.insert(workingData, {outcome = 0, tickets = 1})
-          end
-          createConfigWindow() 
-        end) },
-        content = ui.content({{ 
-          type = ui.TYPE.Text, 
-          props = { text = "X", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(0, 0, 0)} 
-        }})
-      },
-    })
-  }
-end
 
 createConfigWindow = function()
   if windowElement then windowElement:destroy() end
@@ -105,8 +54,53 @@ createConfigWindow = function()
     })
   })
 
-  for i, entry in ipairs(workingData) do
-    table.insert(rowsContent, ROW(i, entry))
+  for index, entry in ipairs(workingData) do
+    table.insert(rowsContent, {
+      type = ui.TYPE.Flex,
+      props = { 
+        horizontal = true, -- The correct property from the docs!
+      },
+      content = ui.content({
+        -- Outcome Box
+        {
+          type = ui.TYPE.Image,
+          props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.2, 0.5, 0.1), size = util.vector2(80, 30) },
+          content = ui.content({{
+            type = ui.TYPE.TextEdit,
+            props = { text = tostring(entry.outcome), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1)},
+            events = { textChanged = async:callback(function(t) workingData[index].outcome = tonumber(t) or 0 end) }
+          }})
+        },
+        { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
+        -- Tickets Box
+        {
+          type = ui.TYPE.Image,
+          props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.2, 0.1, 0.3), size = util.vector2(80, 30) },
+          content = ui.content({{
+            type = ui.TYPE.TextEdit,
+            props = { text = tostring(entry.tickets), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1)},
+            events = { textChanged = async:callback(function(t) workingData[index].tickets = tonumber(t) or 0 end) }
+          }})
+        },
+        { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
+        -- Remove Button
+        {
+          type = ui.TYPE.Image,
+          props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.5, 0.1, 0.1), size = util.vector2(30, 30) },
+          events = { mouseClick = async:callback(function() 
+            table.remove(workingData, index)
+            if #workingData == 0 then
+              table.insert(workingData, {outcome = 0, tickets = 1})
+            end
+            createConfigWindow() 
+          end) },
+          content = ui.content({{ 
+            type = ui.TYPE.Text, 
+            props = { text = "X", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(0, 0, 0)} 
+          }})
+        },
+      })
+    })
     table.insert(rowsContent, { type = ui.TYPE.Widget, props = { size = util.vector2(0, 10) } }) 
   end
 
@@ -150,7 +144,7 @@ createConfigWindow = function()
                     type = ui.TYPE.Text, props = { text = "[ SAVE ]", textSize = 20, textColor = util.color.rgb(0.5, 1, 0.5) },
                     events = { mouseClick = async:callback(function() 
                       distribution:set('dist', workingData)
-                      core.sendGlobalEvent("rebuildDDS", workingData)
+                      core.sendGlobalEvent("updateMDsettings", {dist = workingData})
                       I.UI.setMode()
                     end) }
                   }
@@ -180,7 +174,22 @@ createConfigWindow = function()
   })
 end
 
-toggleDistEdit = function()
+local function storageUpdateSubscription(section, key)
+  if section == "Settings_MobDuplicator" then
+    if key == 'cooldown' then 
+      core.sendGlobalEvent("updateMDsettings", {cooldown = playerSettings:get("cooldown")})
+    end 
+  end
+end
+
+input.registerTrigger {
+    key = 'OpenDistEdit',
+    l10n = 'MobDuplicator',
+    name = ' ',
+    description = ' ',
+}
+
+input.registerTriggerHandler('OpenDistEdit', async:callback(function()
   I.UI.setMode('Interface', { windows = {} })
 
   if windowElement then
@@ -191,31 +200,7 @@ toggleDistEdit = function()
       workingData = deepCopy(distribution:get("dist"))
       createConfigWindow()
   end
-end
-
-local function storageUpdateSubscription(section, key)
-  if section == "Settings_MobDuplicator" then
-    if key == 'cooldown' then 
-      core.sendGlobalEvent("updateCooldown", playerSettings:get("cooldown"))
-    end 
-  end
-end
-
-playerSettings:subscribe(async:callback(storageUpdateSubscription))
-
-local function onRequestCooldown()
-  print("SENDING COOLDOWN")
-  core.sendGlobalEvent("updateCooldown", playerSettings:get("cooldown"))
-end
-
-input.registerTrigger {
-    key = 'OpenDistEdit',
-    l10n = 'MobDuplicator',
-    name = ' ',
-    description = ' ',
-}
-
-input.registerTriggerHandler('OpenDistEdit', async:callback(toggleDistEdit))
+end))
 
 I.Settings.registerPage({
   key = 'MobDuplicator',
@@ -273,7 +258,8 @@ if workingData == nil then
 else
   workingData = deepCopy(workingData)
 end
-core.sendGlobalEvent("rebuildDDS", workingData)
+core.sendGlobalEvent("updateMDsettings", {cooldown = playerSettings:get("cooldown"), dist = workingData})
+playerSettings:subscribe(async:callback(storageUpdateSubscription))
 
 return {
   eventHandlers = {
@@ -283,7 +269,6 @@ return {
         windowElement = nil
       end
     end,
-    requestCooldown = onRequestCooldown,
   }
 }
 --end player.lua
