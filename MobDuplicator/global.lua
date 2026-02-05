@@ -8,7 +8,7 @@ local storage = require('openmw.storage')
 
 local DDS = require('DDS')
 
--- initializing sampler to always zero incase there is a problem with distString upon loading
+-- initializing sampler to always zero incase there is a delay upon loading
 local mobSampler = DDS:new({{outcome = 0, tickets = 1}}) 
 
 local spawnerCooldown = {}
@@ -96,6 +96,9 @@ end
 
 local function rebuildDDS(dist)
   print("rebuildingDDS")
+  for k, v in pairs(dist) do
+    print(string.format("outcome : %s  tickets : %s", v.outcome, v.tickets))
+  end
   mobSampler = DDS:new(dist)
 end
 
