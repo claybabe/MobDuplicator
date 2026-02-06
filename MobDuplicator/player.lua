@@ -7,32 +7,22 @@ local storage = require('openmw.storage')
 local I = require('openmw.interfaces')
 local input = require('openmw.input')
 
-
 local distribution = storage.playerSection("MobDuplicator_Distribution")
 local playerSettings = storage.playerSection('Settings_MobDuplicator')
-local hotkey = storage.playerSection('Settings_Hotkey_MobDuplicator')
 
-local defaultOutcomes = {
-  {outcome = 0, tickets = 15 }, 
-  {outcome = 1, tickets = 40 }, 
-  {outcome = 2, tickets = 30 },
-  {outcome = 5, tickets = 14 },
-  {outcome = 9, tickets = 1 },
-  {outcome = 99, tickets = 0.01 },
-}
+local function defaultOutcomes()
+  return {
+    {outcome = 0, tickets = 15 }, 
+    {outcome = 1, tickets = 40 }, 
+    {outcome = 2, tickets = 30 },
+    {outcome = 5, tickets = 14 },
+    {outcome = 9, tickets = 1 },
+    {outcome = 99, tickets = 0.01 },
+  }
+end
 
 local windowElement = nil
-
 local createConfigWindow
-
-local function deepCopy(t)
-  if type(t) ~= 'table' and type(t) ~= 'userdata' then return t end
-  local res = {}
-  for k, v in pairs(t) do
-    res[k] = deepCopy(v)
-  end
-  return res
-end
 
 -- STATE
 local workingData
@@ -189,7 +179,7 @@ createConfigWindow = function()
                       {
                         type = ui.TYPE.Image,
                         events = { mouseClick = async:callback(function() 
-                          workingData = deepCopy(defaultOutcomes)
+                          workingData = defaultOutcomes()
                           createConfigWindow() 
                         end) },
                         props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.3, 0.3, 0.75), size = util.vector2(130, 30) },
@@ -203,7 +193,7 @@ createConfigWindow = function()
                       {
                         type = ui.TYPE.Image,
                         events = { mouseClick = async:callback(function() 
-                          workingData = deepCopy(distribution:get("dist"))
+                          workingData = distribution:getCopy("dist")
                           createConfigWindow() 
                         end) },
                         props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.3, 0.3, 0.75), size = util.vector2(130, 30) },
@@ -302,7 +292,7 @@ input.registerTriggerHandler('OpenDistEdit', async:callback(function()
     windowElement = nil
     I.UI.setMode()
   else
-      workingData = deepCopy(distribution:get("dist"))
+      workingData =distribution:getCopy("dist")
       createConfigWindow()
   end
 end))
@@ -356,12 +346,10 @@ I.Settings.registerGroup({
 })
 
 --Init
-workingData = distribution:get("dist")
+workingData = distribution:getCopy("dist")
 if workingData == nil then
-  workingData = deepCopy(defaultOutcomes)
+  workingData = defaultOutcomes()
   distribution:set("dist", workingData)
-else
-  workingData = deepCopy(workingData)
 end
 core.sendGlobalEvent("updateMDsettings", {cooldown = playerSettings:get("cooldown"), dist = workingData})
 playerSettings:subscribe(async:callback(storageUpdateSubscription))
