@@ -47,13 +47,56 @@ createConfigWindow = function()
     type = ui.TYPE.Flex,
     props = { horizontal = true },
     content = ui.content({
-      { type = ui.TYPE.Text, props = { text = "Outcome", textSize = 14, size = util.vector2(80, 20) } },
-      { type = ui.TYPE.Widget, props = { size = util.vector2(45, 0) } },
-      { type = ui.TYPE.Text, props = { text = "Tickets", textSize = 14, size = util.vector2(80, 20) } },
-      { type = ui.TYPE.Widget, props = { size = util.vector2(45, 0) } },
+      -- Outcome Header
+      {
+        type = ui.TYPE.Image,
+        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.32, 0.32, 0.32), size = util.vector2(150, 30) },
+        content = ui.content({{
+          type = ui.TYPE.Text,
+          props = { text = "Outcome", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(0, 0, 0)},
+          
+        }})
+      },
+      { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
+      -- Tickets Header
+      {
+        type = ui.TYPE.Image,
+        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.32, 0.32, 0.32), size = util.vector2(150, 30) },
+        content = ui.content({{
+          type = ui.TYPE.Text,
+          props = { text = "Tickets", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(0, 0, 0)},
+        }})
+      },
+      { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
+      -- Probability Header
+      {
+        type = ui.TYPE.Image,
+        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.32, 0.32, 0.32), size = util.vector2(150, 30) },
+        content = ui.content({{
+          type = ui.TYPE.Text,
+          props = { text = "Probability", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(0, 0, 0)},
+        }})
+      },
+      { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
+      -- Remove Header
+      {
+        type = ui.TYPE.Image,
+        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.32, 0.32, 0.32), size = util.vector2(150, 30) },
+        content = ui.content({{ 
+          type = ui.TYPE.Text, 
+          props = { text = "Remove", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(0, 0, 0)} 
+        }})
+      },
     })
   })
+  table.insert(rowsContent, { type = ui.TYPE.Widget, props = { size = util.vector2(0, 10) } })
 
+  local sumTickets = 0 
+  for _, entry in pairs(workingData) do
+    sumTickets =  sumTickets + entry.tickets
+  end
+  
+  -- Rows of the table
   for index, entry in ipairs(workingData) do
     table.insert(rowsContent, {
       type = ui.TYPE.Flex,
@@ -64,25 +107,35 @@ createConfigWindow = function()
         -- Outcome Box
         {
           type = ui.TYPE.Image,
-          props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.2, 0.5, 0.1), size = util.vector2(80, 30) },
+          props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.2, 0.2, 0.5), size = util.vector2(150, 30) },
           content = ui.content({{
             type = ui.TYPE.TextEdit,
-            props = { text = tostring(entry.outcome), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1)},
-            events = { textChanged = async:callback(function(t) workingData[index].outcome = tonumber(t) or 0 end) }
+            props = { text = tostring(entry.outcome), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
+            events = { textChanged = async:callback(function(t) local val = tonumber(t) if val ~= nil then workingData[index].outcome = val end end) }
           }})
         },
         { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
         -- Tickets Box
         {
           type = ui.TYPE.Image,
-          props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.2, 0.1, 0.3), size = util.vector2(80, 30) },
+          props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.3, 0.2, 0.5), size = util.vector2(150, 30) },
           content = ui.content({{
             type = ui.TYPE.TextEdit,
-            props = { text = tostring(entry.tickets), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1)},
-            events = { textChanged = async:callback(function(t) workingData[index].tickets = tonumber(t) or 0 end) }
+            props = { text = tostring(entry.tickets), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
+            events = { textChanged = async:callback(function(t) local val = tonumber(t) if val ~= nil then workingData[index].tickets = val end end) }
           }})
         },
         { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
+        -- Probability Label
+        {
+          type = ui.TYPE.Image,
+          props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.5, 0.5, 0.9), size = util.vector2(150, 30) },
+          content = ui.content({{
+            type = ui.TYPE.Text,
+            props = { relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), text = string.format("%.2f%%", 100 * entry.tickets/sumTickets), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
+          }})
+        },
+        { type = ui.TYPE.Widget, props = { size = util.vector2(80, 0) } },
         -- Remove Button
         {
           type = ui.TYPE.Image,
@@ -96,7 +149,7 @@ createConfigWindow = function()
           end) },
           content = ui.content({{ 
             type = ui.TYPE.Text, 
-            props = { text = "X", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(0, 0, 0)} 
+            props = { text = "x", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(1, 1, 1)} 
           }})
         },
       })
@@ -107,64 +160,116 @@ createConfigWindow = function()
   windowElement = ui.create({
     layer = 'Windows',
     type = ui.TYPE.Container,
-    props = { relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), size = util.vector2(500, 600) },
+    props = { relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), size = util.vector2(700, 600) },
     content = ui.content({
       {
         type = ui.TYPE.Image,
-        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.2, 0.2, 0.2), size = util.vector2(500, 600) },
+        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.32, 0.32, 0.32), size = util.vector2(700, 600) },
         content = ui.content({
           {
             type = ui.TYPE.Flex,
             props = { 
-              horizontal = false,
-              size = util.vector2(500, 600) 
+              horizontal = true,
+              size = util.vector2(700, 600) 
             },
             content = ui.content({
-              -- Top Buttons
+              { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
               {
                 type = ui.TYPE.Flex,
-                props = { horizontal = true, verticalAlignment = ui.ALIGNMENT.Center },
+                props = { 
+                  horizontal = false,
+                  size = util.vector2(685, 600) 
+                },
                 content = ui.content({
+                  -- Top Buttons
                   {
-                    type = ui.TYPE.Text, props = { text = "[ DEFAULT ]", textSize = 20 },
-                    events = { mouseClick = async:callback(function() 
-                      workingData = deepCopy(defaultOutcomes)
-                      createConfigWindow() 
-                    end) }
+                    type = ui.TYPE.Flex,
+                    props = { horizontal = true, verticalAlignment = ui.ALIGNMENT.Center },
+                    content = ui.content({
+                      {
+                        type = ui.TYPE.Image,
+                        events = { mouseClick = async:callback(function() 
+                          workingData = deepCopy(defaultOutcomes)
+                          createConfigWindow() 
+                        end) },
+                        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.3, 0.3, 0.75), size = util.vector2(130, 30) },
+                        content = ui.content({{
+                          type = ui.TYPE.Text,
+                          props = { text = "Defaults", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(1, 1, 1)},
+                          
+                        }})
+                      },
+                      { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
+                      {
+                        type = ui.TYPE.Image,
+                        events = { mouseClick = async:callback(function() 
+                          workingData = deepCopy(distribution:get("dist"))
+                          createConfigWindow() 
+                        end) },
+                        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.3, 0.3, 0.75), size = util.vector2(130, 30) },
+                        content = ui.content({{
+                          type = ui.TYPE.Text,
+                          props = { text = "Revert", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(1, 1, 1)},
+                        }})
+                      },
+                      { type = ui.TYPE.Widget, props = { size = util.vector2(80, 0) } },
+                      {
+                        type = ui.TYPE.Image,
+                        events = { mouseClick = async:callback(function() 
+                          createConfigWindow()
+                        end) },
+                        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.5, 0.5, 0.9), size = util.vector2(100, 30) },
+                        content = ui.content({{ 
+                          type = ui.TYPE.Text, 
+                          props = { text = "Update", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(1, 1, 1)} 
+                        }})
+                      },{ type = ui.TYPE.Widget, props = { size = util.vector2(40, 0) } },
+                      {
+                        type = ui.TYPE.Image,
+                        events = { mouseClick = async:callback(function() 
+                          distribution:set('dist', workingData)
+                          core.sendGlobalEvent("updateMDsettings", {dist = workingData})
+                          I.UI.setMode()
+                        end) },
+                        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.1, 0.5, 0.1), size = util.vector2(80, 30) },
+                        content = ui.content({{ 
+                          type = ui.TYPE.Text, 
+                          props = { text = "Save", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(1, 1, 1)} 
+                        }})
+                      },{ type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
+                      {
+                        type = ui.TYPE.Image,
+                        events = { mouseClick = async:callback(function() 
+                          I.UI.setMode()
+                        end) },
+                        props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.5, 0.1, 0.1), size = util.vector2(85, 30) },
+                        content = ui.content({{ 
+                          type = ui.TYPE.Text, 
+                          props = { text = "Cancel", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(1, 1, 1)} 
+                        }})
+                      },
+                    })
+                  },
+                  { type = ui.TYPE.Widget, props = { size = util.vector2(0, 20) } },
+                  -- The List
+                  { 
+                    type = ui.TYPE.Flex, 
+                    props = { horizontal = false }, 
+                    content = ui.content(rowsContent) 
                   },
                   {
-                    type = ui.TYPE.Text, props = { text = "[ REVERT ]", textSize = 20 },
+                    type = ui.TYPE.Image,
                     events = { mouseClick = async:callback(function() 
-                      workingData = deepCopy(distribution:get("dist"))
+                      table.insert(workingData, {outcome = 0, tickets = 1}) 
                       createConfigWindow() 
-                    end) }
-                  },                  
-                  { type = ui.TYPE.Widget, props = { size = util.vector2(50, 40) } },
-                  {
-                    type = ui.TYPE.Text, props = { text = "[ SAVE ]", textSize = 20, textColor = util.color.rgb(0.5, 1, 0.5) },
-                    events = { mouseClick = async:callback(function() 
-                      distribution:set('dist', workingData)
-                      core.sendGlobalEvent("updateMDsettings", {dist = workingData})
-                      I.UI.setMode()
-                    end) }
-                  }
+                    end) },
+                    props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.5, 0.5, 0.9), size = util.vector2(150, 30) },
+                    content = ui.content({{ 
+                      type = ui.TYPE.Text, 
+                      props = { text = "+", relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), textSize = 20, textColor = util.color.rgb(1, 1, 1)} 
+                    }})
+                  },
                 })
-              },
-              { type = ui.TYPE.Widget, props = { size = util.vector2(0, 20) } },
-              -- The List
-              { 
-                type = ui.TYPE.Flex, 
-                props = { horizontal = false }, 
-                content = ui.content(rowsContent) 
-              },
-              { type = ui.TYPE.Widget, props = { size = util.vector2(0, 20) } },
-              -- Add Button
-              {
-                type = ui.TYPE.Text, props = { text = "(+) ADD NEW ROW", textSize = 18, textColor = util.color.rgb(0.8, 0.8, 1) },
-                events = { mouseClick = async:callback(function() 
-                  table.insert(workingData, {outcome = 0, tickets = 1}) 
-                  createConfigWindow() 
-                end) }
               }
             })
           }
