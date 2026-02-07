@@ -21,7 +21,7 @@ local function onModConfigReady()
   page.sidebar:createInfo({text = "Allows a leveled creature spawner to potentially spawn more than one creature.\n\n"})
 
   page.sidebar:createCategory("Cooldown")
-  page.sidebar:createInfo({text = "Hours of in-game time. Spawners that reload before the cooldown will not roll for dupes.\n\n"})
+  page.sidebar:createInfo({text = "Seconds of in-game time. Spawners that reload before the cooldown will not roll for dupes.\n\n"})
 
   page.sidebar:createCategory("Outcomes and Tickets")
   page.sidebar:createInfo({text = "The Outcome chosen will have that many additional spawns created.\nMore tickets increase chance to be chosen.\n\n\n\n"})
@@ -51,7 +51,13 @@ local function onModConfigReady()
     local block = page:createSideBySideBlock()
     block:createInfo({text = "Outcome"})
     block:createInfo({text = "Tickets"})
+    block:createInfo({text = "Probability"})
     block:createInfo({text = "Remove"})
+
+    local sumTickets = 0
+    for _, entry in pairs(config.dist) do
+      sumTickets = sumTickets + entry.tickets
+    end
 
     for i, entry in ipairs(config.dist) do
       local block = page:createSideBySideBlock()
@@ -67,6 +73,8 @@ local function onModConfigReady()
         variable = mwse.mcm.createTableVariable{id = "tickets", table = entry, converter = tonumber},
         callback = update,
       })
+
+      block:createInfo({text = string.format("%.2f%%", entry.tickets / sumTickets * 100)})
 
       block:createButton({
         buttonText = "X",

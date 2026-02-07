@@ -5,23 +5,26 @@ Allows a leveled creature spawner to potentially spawn more than one creature.
 
 ## Cooldown
 
-Hours of in-game time. Spawners that reload before the cooldown will not roll for dupes.
+Seconds of in-game time. Spawners that reload before the cooldown will not roll for dupes.
 
 
 ## Outcomes and Tickets
 
-The Outcome chosen will have that many additional spawns created.\nMore tickets increase chance to be chosen.
+The Outcome chosen will have that many additional spawns created.
+
+More tickets increase chance to be chosen.
 
 #
 #
 
 ## Shoutout
 
-nullcascade
+NullCascade
 
-merlord
+Merlord
 
-twitch.tv/mojorising
+twitch.tv/MojoRising
 
-twitch.tv/literallygambling
+twitch.tv/LiterallyGambling
 
+www.keithschwarz.com/darts-dice-coins/

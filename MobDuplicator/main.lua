@@ -9,8 +9,8 @@
 local config = require("MobDuplicator.config")
 local log = require("MobDuplicator.log")
 
-local DDS = require("MobDuplicator.DDS")
-local mobSampler
+local FancyDice = require("MobDuplicator.DDS")
+local fancyDice
 
 -- =========================================================================
 -- 2. Reference Activated
@@ -21,19 +21,22 @@ local function onReferenceActivated(e)
     return
   end
 
-  local currentHour = tes3.getGlobal('DaysPassed') * 24 + tes3.getGlobal('GameHour')
+  local timescale = tes3.getGlobal('TimeScale')
+  local currentSeconds = (tes3.getGlobal('DaysPassed') * 86400) + (tes3.getGlobal('GameHour') * 3600)
+  local realTimeSeconds = currentSeconds / timescale
   local lastSpawn = spawner.data.lastSpawnTime
   if (lastSpawn ~= nil) then
-    if (config.cooldown > (currentHour - lastSpawn)) then
-      log:debug("Spawner cooling down. Time remaining: %s [%s @ %s]", config.cooldown - (currentHour - lastSpawn), spawner, spawner.position)
-      return
-    else
-      log:debug("Cooldown complete, re-rolling.")
-    end
+      local timePassed = realTimeSeconds - lastSpawn
+      if (config.cooldown > timePassed) then
+        log:debug("Spawner cooling down. Time remaining: %s [%s @ %s]", config.cooldown - timePassed, spawner, spawner.position)
+        return
+      else
+        log:debug("Cooldown complete, re-rolling.")
+      end
   end
-  spawner.data.lastSpawnTime = currentHour
+  spawner.data.lastSpawnTime = realTimeSeconds
 
-  local roll = mobSampler:roll()
+  local roll = fancyDice:roll()
   if (roll <= 0) then
     log:debug("Rolled 0, no dupe. [%s @ %s]", spawner, spawner.position)
   end
@@ -68,13 +71,13 @@ end
 -- 3. Rebuild
 -- =========================================================================
 local function onRebuild(e)
-  mobSampler = DDS:new(config.dist)
+  fancyDice = FancyDice:new(config.dist)
 end
 
 -- =========================================================================
 -- 4. Init
 -- =========================================================================
-mobSampler = DDS:new(config.dist)
+fancyDice = FancyDice:new(config.dist)
 
 event.register(tes3.event.referenceActivated, onReferenceActivated)
 event.register("MobDuplicator:Rebuild", onRebuild)

@@ -7,7 +7,7 @@
 
 local defaultConfig = {
   logLevel = "DEBUG",
-  cooldown = 72,
+  cooldown = 259200,
   dist = {
     {outcome = 0, tickets = 15 }, 
     {outcome = 1, tickets = 40 }, 
