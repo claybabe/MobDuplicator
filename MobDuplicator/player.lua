@@ -339,8 +339,7 @@ I.Settings.registerGroup({
       },
       name = 'Open Config Menu',
       description = 'Custom UI to Edit Distribution',
-      default = "M",
-      action = "OpenDistEdit",
+      default = "MobDuplicatorHotkey",
     },
   },
 })
