@@ -100,7 +100,7 @@ createConfigWindow = function()
           props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.2, 0.2, 0.5), size = util.vector2(150, 30) },
           content = ui.content({{
             type = ui.TYPE.TextEdit,
-            props = { text = tostring(entry.outcome), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
+            props = { text = tostring(entry.outcome), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
             events = { textChanged = async:callback(function(t) local val = tonumber(t) if val ~= nil then workingData[index].outcome = val end end) }
           }})
         },
@@ -111,7 +111,7 @@ createConfigWindow = function()
           props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.3, 0.2, 0.5), size = util.vector2(150, 30) },
           content = ui.content({{
             type = ui.TYPE.TextEdit,
-            props = { text = tostring(entry.tickets), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
+            props = { text = tostring(entry.tickets), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
             events = { textChanged = async:callback(function(t) local val = tonumber(t) if val ~= nil then workingData[index].tickets = val end end) }
           }})
         },
@@ -122,7 +122,7 @@ createConfigWindow = function()
           props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.5, 0.5, 0.9), size = util.vector2(150, 30) },
           content = ui.content({{
             type = ui.TYPE.Text,
-            props = { relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), text = string.format("%.2f%%", 100 * entry.tickets/sumTickets), size = util.vector2(80, 30), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
+            props = { relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), text = string.format("%.2f%%", 100 * entry.tickets/sumTickets), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
           }})
         },
         { type = ui.TYPE.Widget, props = { size = util.vector2(80, 0) } },
