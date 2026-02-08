@@ -81,11 +81,23 @@ createConfigWindow = function()
   })
   table.insert(rowsContent, { type = ui.TYPE.Widget, props = { size = util.vector2(0, 10) } })
 
-  local sumTickets = 0 
+  local unique = {}
   for _, entry in pairs(workingData) do
-    sumTickets =  sumTickets + entry.tickets
+    unique[entry.outcome] = (unique[entry.outcome] or 0) + entry.tickets
   end
   
+
+  local sumTickets = 0 
+  workingData = {}
+  for k, v in pairs(unique) do
+    sumTickets =  sumTickets + v
+    table.insert(workingData, {outcome = k, tickets = v})
+  end
+  
+  table.sort(workingData, function(a, b)
+    return a.outcome < b.outcome
+  end)
+
   -- Rows of the table
   for index, entry in ipairs(workingData) do
     table.insert(rowsContent, {
@@ -101,7 +113,12 @@ createConfigWindow = function()
           content = ui.content({{
             type = ui.TYPE.TextEdit,
             props = { text = tostring(entry.outcome), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
-            events = { textChanged = async:callback(function(t) local val = tonumber(t) if val ~= nil then workingData[index].outcome = val end end) }
+            events = { textChanged = async:callback(function(t)
+              local val = tonumber(t)
+              if val ~= nil and val >= 0 then
+                workingData[index].outcome = math.floor(val)
+              end
+            end) }
           }})
         },
         { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
@@ -112,7 +129,12 @@ createConfigWindow = function()
           content = ui.content({{
             type = ui.TYPE.TextEdit,
             props = { text = tostring(entry.tickets), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
-            events = { textChanged = async:callback(function(t) local val = tonumber(t) if val ~= nil then workingData[index].tickets = val end end) }
+            events = { textChanged = async:callback(function(t)
+              local val = tonumber(t)
+              if val ~= nil and val > 0 then
+                  workingData[index].tickets = val
+              end
+            end) }
           }})
         },
         { type = ui.TYPE.Widget, props = { size = util.vector2(15, 0) } },
@@ -122,7 +144,7 @@ createConfigWindow = function()
           props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.5, 0.5, 0.9), size = util.vector2(150, 30) },
           content = ui.content({{
             type = ui.TYPE.Text,
-            props = { relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), text = string.format("%.2f%%", 100 * entry.tickets/sumTickets), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
+            props = { relativePosition = util.vector2(0.5, 0.5), anchor = util.vector2(0.5, 0.5), text = string.format("%.5f%%", 100 * entry.tickets/sumTickets), textSize = 27, textColor = util.color.rgb(1, 1, 1), size = util.vector2(150, 30)},
           }})
         },
         { type = ui.TYPE.Widget, props = { size = util.vector2(80, 0) } },
@@ -216,7 +238,7 @@ createConfigWindow = function()
                       },{ type = ui.TYPE.Widget, props = { size = util.vector2(40, 0) } },
                       {
                         type = ui.TYPE.Image,
-                        events = { mouseClick = async:callback(function() 
+                        events = { mouseClick = async:callback(function()
                           distribution:set('dist', workingData)
                           core.sendGlobalEvent("updateMDsettings", {dist = workingData})
                           I.UI.setMode()
@@ -249,8 +271,12 @@ createConfigWindow = function()
                   },
                   {
                     type = ui.TYPE.Image,
-                    events = { mouseClick = async:callback(function() 
-                      table.insert(workingData, {outcome = 0, tickets = 1}) 
+                    events = { mouseClick = async:callback(function()
+                      local max = 0
+                      for _, entry in pairs(workingData) do
+                        max = math.max(max, entry.outcome)
+                      end
+                      table.insert(workingData, {outcome = max + 1, tickets = 1}) 
                       createConfigWindow() 
                     end) },
                     props = { resource = ui.texture({path = 'white'}), color = util.color.rgb(0.5, 0.5, 0.9), size = util.vector2(150, 30) },

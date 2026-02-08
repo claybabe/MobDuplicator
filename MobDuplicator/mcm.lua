@@ -54,10 +54,20 @@ local function onModConfigReady()
     block:createInfo({text = "Probability"})
     block:createInfo({text = "Remove"})
 
+    max = 0
     local sumTickets = 0
     for _, entry in pairs(config.dist) do
+      if entry.tickets <= 0 then
+        entry.tickets = 1
+      end
       sumTickets = sumTickets + entry.tickets
+      entry.outcome = math.floor(math.abs(entry.outcome))
+      max = math.max(max, entry.outcome)
     end
+
+    table.sort(config.dist, function(a,b)
+      return a.outcome < b.outcome
+    end)
 
     for i, entry in ipairs(config.dist) do
       local block = page:createSideBySideBlock()
@@ -74,7 +84,7 @@ local function onModConfigReady()
         callback = update,
       })
 
-      block:createInfo({text = string.format("%.2f%%", entry.tickets / sumTickets * 100)})
+      block:createInfo({text = string.format("%.5f%%", entry.tickets / sumTickets * 100)})
 
       block:createButton({
         buttonText = "X",
@@ -91,7 +101,7 @@ local function onModConfigReady()
     page:createButton({
       buttonText = "Add new Outcome",
       callback = function()
-        table.insert(config.dist, {outcome = 0, tickets = 1})
+        table.insert(config.dist, {outcome = max + 1, tickets = 1})
         update()
       end
     })
